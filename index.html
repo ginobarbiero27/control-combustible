@@ -238,14 +238,16 @@
       <div class="card">
         <p class="section-title">📱 Alerta por WhatsApp</p>
         <p style="font-size:12px;color:#888;margin-bottom:10px">
-          Cuando el stock baje del umbral, la app genera un mensaje listo para enviar por WhatsApp con un solo toque.
+          Cuando el stock baje del umbral, la app genera un mensaje listo para enviar por WhatsApp con un solo toque. Podés configurar hasta 2 números.
         </p>
-        <label>Tu número de WhatsApp (con código de país)</label>
+        <label>Número 1 — Principal (con código de país)</label>
         <input type="text" id="wa-numero" placeholder="Ej: 5493424000000" inputmode="numeric">
+        <label style="margin-top:10px">Número 2 — Secundario (opcional)</label>
+        <input type="text" id="wa-numero2" placeholder="Ej: 5493424000001" inputmode="numeric">
         <p style="font-size:11px;color:#aaa;margin-top:4px">Formato: 549 + código área + número (sin 0 ni 15)</p>
-        <button class="btn-primary" style="background:#25D366" onclick="guardarWA()">Guardar número WhatsApp</button>
+        <button class="btn-primary" style="background:#25D366" onclick="guardarWA()">Guardar números WhatsApp</button>
         <div class="wa-config" id="wa-preview" style="display:none">
-          <p style="font-size:12px;font-weight:600;color:#166534;margin-bottom:6px">✓ Configurado. Cuando el stock baje del umbral aparecerá un botón para enviar el alerta directo a este número.</p>
+          <p style="font-size:12px;font-weight:600;color:#166534;margin-bottom:6px">✓ Configurado. Cuando el stock baje del umbral aparecerán botones para avisar a cada número.</p>
         </div>
       </div>
 
@@ -426,6 +428,7 @@ async function checkStockAlertas(){
   const umbralComun   = parseInt(localStorage.getItem('umbral_comun')||'0');
   const umbralPremium = parseInt(localStorage.getItem('umbral_premium')||'0');
   const waNumero      = localStorage.getItem('wa_numero')||'';
+  const waNumero2     = localStorage.getItem('wa_numero2')||'';
   if(!umbralComun && !umbralPremium) return;
 
   const { data: cargas }  = await sb.from('cargas').select('tipo,litros');
@@ -444,7 +447,8 @@ async function checkStockAlertas(){
   if(umbralComun>0 && repComun>0 && stockComun<=umbralComun){
     document.getElementById('alerta-stock-comun-txt').innerHTML =
       'Stock actual: <strong>'+stockComun.toLocaleString('es-AR')+' lts</strong> — Umbral: '+umbralComun.toLocaleString('es-AR')+' lts'+
-      (waNumero ? '<br><a href="'+generarLinkWA('común', stockComun)+'" target="_blank" style="display:inline-block;margin-top:8px;background:#25D366;color:white;padding:6px 14px;border-radius:8px;font-weight:600;text-decoration:none">📱 Avisar por WhatsApp</a>' : '');
+      (waNumero ? '<br><a href="'+generarLinkWA('común', stockComun, waNumero)+'" target="_blank" style="display:inline-block;margin-top:8px;margin-right:6px;background:#25D366;color:white;padding:6px 14px;border-radius:8px;font-weight:600;text-decoration:none">📱 Avisar Nro 1</a>' : '')+
+      (waNumero2 ? '<a href="'+generarLinkWA('común', stockComun, waNumero2)+'" target="_blank" style="display:inline-block;margin-top:8px;background:#128C7E;color:white;padding:6px 14px;border-radius:8px;font-weight:600;text-decoration:none">📱 Avisar Nro 2</a>' : '');
     elComun.style.display='block';
   } else { elComun.style.display='none'; }
 
@@ -453,13 +457,13 @@ async function checkStockAlertas(){
   if(umbralPremium>0 && repPrem>0 && stockPrem<=umbralPremium){
     document.getElementById('alerta-stock-premium-txt').innerHTML =
       'Stock actual: <strong>'+stockPrem.toLocaleString('es-AR')+' lts</strong> — Umbral: '+umbralPremium.toLocaleString('es-AR')+' lts'+
-      (waNumero ? '<br><a href="'+generarLinkWA('premium', stockPrem)+'" target="_blank" style="display:inline-block;margin-top:8px;background:#25D366;color:white;padding:6px 14px;border-radius:8px;font-weight:600;text-decoration:none">📱 Avisar por WhatsApp</a>' : '');
+      (waNumero ? '<br><a href="'+generarLinkWA('premium', stockPrem, waNumero)+'" target="_blank" style="display:inline-block;margin-top:8px;margin-right:6px;background:#25D366;color:white;padding:6px 14px;border-radius:8px;font-weight:600;text-decoration:none">📱 Avisar Nro 1</a>' : '')+
+      (waNumero2 ? '<a href="'+generarLinkWA('premium', stockPrem, waNumero2)+'" target="_blank" style="display:inline-block;margin-top:8px;background:#128C7E;color:white;padding:6px 14px;border-radius:8px;font-weight:600;text-decoration:none">📱 Avisar Nro 2</a>' : '');
     elPrem.style.display='block';
   } else { elPrem.style.display='none'; }
 }
 
-function generarLinkWA(tipo, stock){
-  const waNumero = localStorage.getItem('wa_numero')||'';
+function generarLinkWA(tipo, stock, numero){
   const fecha = new Date().toLocaleDateString('es-AR');
   const msg = encodeURIComponent(
     '⚠️ ALERTA STOCK COMBUSTIBLE\n'+
@@ -467,7 +471,7 @@ function generarLinkWA(tipo, stock){
     'Fecha: '+fecha+'\n'+
     'Por favor coordinar reposición.'
   );
-  return 'https://wa.me/'+waNumero+'?text='+msg;
+  return 'https://wa.me/'+numero+'?text='+msg;
 }
 
 // ── PANEL ──
@@ -655,9 +659,11 @@ function cargarConfigLocal(){
   const umbC=localStorage.getItem('umbral_comun')||'';
   const umbP=localStorage.getItem('umbral_premium')||'';
   const waN=localStorage.getItem('wa_numero')||'';
+  const waN2=localStorage.getItem('wa_numero2')||'';
   document.getElementById('umbral-comun').value=umbC;
   document.getElementById('umbral-premium').value=umbP;
   document.getElementById('wa-numero').value=waN;
+  document.getElementById('wa-numero2').value=waN2;
   if(waN) document.getElementById('wa-preview').style.display='block';
 }
 
@@ -679,11 +685,15 @@ function guardarUmbrales(){
 
 function guardarWA(){
   const num=document.getElementById('wa-numero').value.trim();
-  if(!num){ alert('Ingresá tu número de WhatsApp.'); return; }
+  const num2=document.getElementById('wa-numero2').value.trim();
+  if(!num){ alert('Ingresá al menos el número principal.'); return; }
   localStorage.setItem('wa_numero',num);
+  if(num2) localStorage.setItem('wa_numero2',num2);
+  else localStorage.removeItem('wa_numero2');
   document.getElementById('wa-preview').style.display='block';
-  alert('Número guardado. Cuando el stock baje del umbral aparecerá un botón para avisar por WhatsApp.');
+  alert('Números guardados correctamente. Cuando el stock baje del umbral aparecerán botones para avisar a cada número.');
 }
 </script>
 </body>
 </html>
+
