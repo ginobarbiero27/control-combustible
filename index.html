@@ -9,7 +9,6 @@
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
     .app{max-width:480px;margin:0 auto;padding:12px}
     .header{background:#1F4E79;color:white;padding:14px 16px;border-radius:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
-    .header h1{font-size:16px;font-weight:600}
     .header-sub{font-size:12px;opacity:.75;margin-top:2px}
     .user-badge{background:rgba(255,255,255,.2);padding:4px 10px;border-radius:20px;font-size:12px}
     .tabs{display:flex;gap:6px;margin-bottom:12px;background:white;padding:6px;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -29,6 +28,7 @@
     .btn-primary{width:100%;padding:13px;background:#1F4E79;color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px;font-family:inherit}
     .btn-primary:active{opacity:.85}
     .btn-secondary{width:100%;padding:10px;background:white;color:#1F4E79;border:1.5px solid #1F4E79;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-top:8px;font-family:inherit}
+    .btn-green{width:100%;padding:10px;background:#375623;color:white;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-top:8px;font-family:inherit}
     .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
     .metric{background:white;border-radius:10px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
     .metric-label{font-size:11px;color:#888;margin-bottom:4px;font-weight:500}
@@ -45,11 +45,17 @@
     .litros-box{background:#EBF2FA;border-radius:8px;padding:10px 14px;margin-top:8px;font-size:13px;color:#555;display:none}
     .litros-box strong{font-size:18px;color:#1F4E79}
     .success-card{background:#EAF3DE;border:1.5px solid #3B6D11;border-radius:12px;padding:16px;text-align:center}
-    .success-icon{font-size:32px;margin-bottom:6px}
     .alert-box{border-radius:8px;padding:10px 12px;font-size:13px;margin-top:10px}
     .alert-ok{background:#EAF3DE;border:1px solid #3B6D11;color:#27500A}
     .alert-warn{background:#FAEEDA;border:1px solid #BA7517;color:#633806}
     .alert-danger{background:#FCEBEB;border:1px solid #A32D2D;color:#7A1A1A}
+    /* ALERTA STOCK */
+    .stock-alert{background:#FCEBEB;border:2px solid #C00000;border-radius:12px;padding:14px;margin-bottom:10px;display:none}
+    .stock-alert-title{font-weight:700;color:#C00000;font-size:15px;margin-bottom:4px}
+    .stock-alert-detail{font-size:13px;color:#7A1A1A}
+    .stock-ok{background:#EAF3DE;border:2px solid #3B6D11;border-radius:12px;padding:12px;margin-bottom:10px;display:none}
+    /* WHATSAPP CONFIG */
+    .wa-config{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px;margin-top:10px}
     .login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f5f5;padding:20px}
     .login-card{background:white;border-radius:16px;padding:24px;width:100%;max-width:360px;box-shadow:0 4px 20px rgba(0,0,0,.1);text-align:center}
     .login-logo{width:60px;height:60px;background:#1F4E79;border-radius:16px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center}
@@ -78,10 +84,20 @@
   <div class="app">
     <div class="header">
       <div>
-        <div class="header h1" style="font-size:16px;font-weight:600">Control Combustible</div>
+        <div style="font-size:16px;font-weight:600">Control Combustible</div>
         <div class="header-sub" id="header-fecha"></div>
       </div>
       <div class="user-badge" id="header-user"></div>
+    </div>
+
+    <!-- ALERTA STOCK GLOBAL -->
+    <div class="stock-alert" id="alerta-stock-comun">
+      <div class="stock-alert-title">⚠️ Stock Gas Oil Común BAJO</div>
+      <div class="stock-alert-detail" id="alerta-stock-comun-txt"></div>
+    </div>
+    <div class="stock-alert" id="alerta-stock-premium">
+      <div class="stock-alert-title">⚠️ Stock Gas Oil Premium BAJO</div>
+      <div class="stock-alert-detail" id="alerta-stock-premium-txt"></div>
     </div>
 
     <div class="tabs">
@@ -89,8 +105,10 @@
       <button class="tab" onclick="showScreen('panel',this)">Panel</button>
       <button class="tab" onclick="showScreen('consumo',this)">Consumo</button>
       <button class="tab" onclick="showScreen('tanques',this)">Tanques</button>
+      <button class="tab" onclick="showScreen('config',this)">Config</button>
     </div>
 
+    <!-- CARGA -->
     <div id="screen-carga" class="screen active">
       <div class="card" id="form-card">
         <p class="section-title">Nueva carga</p>
@@ -125,11 +143,11 @@
         </div>
         <label>Fecha</label>
         <input type="date" id="fecha">
-        <button class="btn-primary" id="btn-guardar" onclick="guardarCarga()">Confirmar carga</button>
+        <button class="btn-primary" onclick="guardarCarga()">Confirmar carga</button>
       </div>
       <div id="success-card" style="display:none">
         <div class="success-card">
-          <div class="success-icon">✓</div>
+          <div style="font-size:32px;margin-bottom:6px">✓</div>
           <p style="font-weight:700;color:#27500A;font-size:16px">Carga registrada</p>
           <p style="font-size:13px;color:#3B6D11;margin-top:4px" id="success-detail"></p>
           <div id="consumo-alert" style="display:none"></div>
@@ -138,6 +156,7 @@
       </div>
     </div>
 
+    <!-- PANEL -->
     <div id="screen-panel" class="screen">
       <div class="metric-grid">
         <div class="metric"><div class="metric-label">Cargas hoy</div><div class="metric-value" id="p-cargas-hoy">—</div><div class="metric-sub">registros</div></div>
@@ -151,8 +170,18 @@
         <p class="section-title">Últimas cargas</p>
         <div id="p-ultimas"><div class="spinner" style="margin:1rem auto"></div></div>
       </div>
+      <!-- EXPORTAR EXCEL -->
+      <div class="card">
+        <p class="section-title">Exportar a Excel</p>
+        <p style="font-size:12px;color:#888;margin-bottom:10px">Descargá todas las cargas del mes en un archivo Excel</p>
+        <select id="export-mes" style="margin-bottom:8px">
+          <option value="">— Seleccionar mes —</option>
+        </select>
+        <button class="btn-green" onclick="exportarExcel()">📥 Descargar Excel</button>
+      </div>
     </div>
 
+    <!-- CONSUMO -->
     <div id="screen-consumo" class="screen">
       <div class="card">
         <p class="section-title">Consumo promedio por unidad</p>
@@ -161,6 +190,7 @@
       </div>
     </div>
 
+    <!-- TANQUES -->
     <div id="screen-tanques" class="screen">
       <div class="card">
         <p class="section-title">Stock actual</p>
@@ -168,6 +198,7 @@
           <div class="row-item"><span style="font-weight:600">Gas oil común</span><span id="t-stock-comun" style="font-weight:600;color:#1F4E79">—</span></div>
           <div class="row-item"><span style="font-weight:600">Gas oil premium</span><span id="t-stock-premium" style="font-weight:600;color:#27500A">—</span></div>
         </div>
+        <div style="margin-top:10px;font-size:12px;color:#888">Umbral alerta: Común <strong id="umbral-comun-txt">—</strong> lts | Premium <strong id="umbral-premium-txt">—</strong> lts</div>
       </div>
       <div class="card">
         <p class="section-title">Registrar reposición</p>
@@ -192,12 +223,46 @@
       </div>
     </div>
 
+    <!-- CONFIG -->
+    <div id="screen-config" class="screen">
+      <div class="card">
+        <p class="section-title">⚠️ Alertas de stock bajo</p>
+        <p style="font-size:12px;color:#888;margin-bottom:12px">Cuando el stock baje de estos valores aparece una alerta roja en la app</p>
+        <label>Umbral Gas Oil Común (lts)</label>
+        <input type="number" id="umbral-comun" placeholder="Ej: 2000" inputmode="numeric">
+        <label>Umbral Gas Oil Premium (lts)</label>
+        <input type="number" id="umbral-premium" placeholder="Ej: 500" inputmode="numeric">
+        <button class="btn-primary" onclick="guardarUmbrales()">Guardar umbrales</button>
+      </div>
+
+      <div class="card">
+        <p class="section-title">📱 Alerta por WhatsApp</p>
+        <p style="font-size:12px;color:#888;margin-bottom:10px">
+          Cuando el stock baje del umbral, la app genera un mensaje listo para enviar por WhatsApp con un solo toque.
+        </p>
+        <label>Tu número de WhatsApp (con código de país)</label>
+        <input type="text" id="wa-numero" placeholder="Ej: 5493424000000" inputmode="numeric">
+        <p style="font-size:11px;color:#aaa;margin-top:4px">Formato: 549 + código área + número (sin 0 ni 15)</p>
+        <button class="btn-primary" style="background:#25D366" onclick="guardarWA()">Guardar número WhatsApp</button>
+        <div class="wa-config" id="wa-preview" style="display:none">
+          <p style="font-size:12px;font-weight:600;color:#166534;margin-bottom:6px">✓ Configurado. Cuando el stock baje del umbral aparecerá un botón para enviar el alerta directo a este número.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="section-title">👤 Mi usuario</p>
+        <p style="font-size:13px;color:#555" id="config-usuario"></p>
+        <button class="btn-secondary" onclick="cambiarUsuario()" style="margin-top:10px">Cambiar usuario</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <div class="loading-overlay" id="loading"><div class="spinner"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 const SUPABASE_URL = 'https://fihtrrprqaerlonbkqzy.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpaHRycnBycWFlcmxvbmJrcXp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwODY0NzgsImV4cCI6MjA5MjY2MjQ3OH0.BJEkQ71GYVLtYG3KsTUmK_-6TGGBpOIbBUY1t1JiaOI';
@@ -213,6 +278,7 @@ document.getElementById('header-fecha').textContent = new Date().toLocaleDateStr
 
 function showLoading(v){ document.getElementById('loading').style.display = v ? 'flex' : 'none'; }
 
+// ── LOGIN ──
 async function doLogin(){
   const nombre = document.getElementById('login-nombre').value.trim();
   const apellido = document.getElementById('login-apellido').value.trim();
@@ -227,13 +293,22 @@ function startApp(user){
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').style.display = 'block';
   document.getElementById('header-user').textContent = user.split(' ')[0];
+  cargarConfigLocal();
+  checkStockAlertas();
 }
 
 window.onload = () => {
   const saved = localStorage.getItem('comb_user');
-  if(saved){ startApp(saved); }
+  if(saved) startApp(saved);
 };
 
+function cambiarUsuario(){
+  localStorage.removeItem('comb_user');
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+// ── TABS ──
 function showScreen(name, el){
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -242,36 +317,39 @@ function showScreen(name, el){
   if(name === 'panel') loadPanel();
   if(name === 'consumo') loadConsumo();
   if(name === 'tanques') loadTanques();
+  if(name === 'config') loadConfig();
 }
 
+// ── TIPO SELECTORS ──
 function selTipo(t){
   tipoComb = t;
-  document.getElementById('btn-comun').className = 'radio-btn' + (t==='comun' ? ' sel-blue' : '');
-  document.getElementById('btn-comun').style.opacity = t==='comun' ? '1' : '.5';
-  document.getElementById('btn-premium').className = 'radio-btn' + (t==='premium' ? ' sel-green' : '');
-  document.getElementById('btn-premium').style.opacity = t==='premium' ? '1' : '.5';
+  document.getElementById('btn-comun').className = 'radio-btn'+(t==='comun'?' sel-blue':'');
+  document.getElementById('btn-comun').style.opacity = t==='comun'?'1':'.5';
+  document.getElementById('btn-premium').className = 'radio-btn'+(t==='premium'?' sel-green':'');
+  document.getElementById('btn-premium').style.opacity = t==='premium'?'1':'.5';
 }
 function selCarga(c){
   tipoCarga = c;
-  document.getElementById('btn-lleno').className = 'radio-btn' + (c==='lleno' ? ' sel-blue' : '');
-  document.getElementById('btn-lleno').style.opacity = c==='lleno' ? '1' : '.5';
-  document.getElementById('btn-recarga').className = 'radio-btn' + (c==='recarga' ? ' sel-blue' : '');
-  document.getElementById('btn-recarga').style.opacity = c==='recarga' ? '1' : '.5';
+  document.getElementById('btn-lleno').className = 'radio-btn'+(c==='lleno'?' sel-blue':'');
+  document.getElementById('btn-lleno').style.opacity = c==='lleno'?'1':'.5';
+  document.getElementById('btn-recarga').className = 'radio-btn'+(c==='recarga'?' sel-blue':'');
+  document.getElementById('btn-recarga').style.opacity = c==='recarga'?'1':'.5';
 }
 function selRepTipo(t){
   repTipo = t;
-  document.getElementById('rep-btn-comun').className = 'radio-btn' + (t==='comun' ? ' sel-blue' : '');
-  document.getElementById('rep-btn-comun').style.opacity = t==='comun' ? '1' : '.5';
-  document.getElementById('rep-btn-premium').className = 'radio-btn' + (t==='premium' ? ' sel-green' : '');
-  document.getElementById('rep-btn-premium').style.opacity = t==='premium' ? '1' : '.5';
+  document.getElementById('rep-btn-comun').className = 'radio-btn'+(t==='comun'?' sel-blue':'');
+  document.getElementById('rep-btn-comun').style.opacity = t==='comun'?'1':'.5';
+  document.getElementById('rep-btn-premium').className = 'radio-btn'+(t==='premium'?' sel-green':'');
+  document.getElementById('rep-btn-premium').style.opacity = t==='premium'?'1':'.5';
 }
 
+// ── SURTIDOR ──
 function calcLitros(){
-  const ini = parseFloat(document.getElementById('surtidor-inicio').value) || 0;
-  const fin = parseFloat(document.getElementById('surtidor-fin').value) || 0;
+  const ini = parseFloat(document.getElementById('surtidor-inicio').value)||0;
+  const fin = parseFloat(document.getElementById('surtidor-fin').value)||0;
   const box = document.getElementById('litros-box');
-  if(ini > 0 && fin > ini){
-    const lts = Math.round((fin - ini) * 10) / 10;
+  if(ini>0 && fin>ini){
+    const lts = Math.round((fin-ini)*10)/10;
     document.getElementById('litros-result').textContent = lts.toLocaleString('es-AR');
     box.style.display = 'block';
     return lts;
@@ -282,15 +360,16 @@ function calcLitros(){
 document.getElementById('surtidor-inicio').addEventListener('input', calcLitros);
 document.getElementById('surtidor-fin').addEventListener('input', calcLitros);
 
+// ── GUARDAR CARGA ──
 async function guardarCarga(){
   const unidad = document.getElementById('unidad').value;
   const km = parseInt(document.getElementById('km').value);
   const ini = parseFloat(document.getElementById('surtidor-inicio').value);
   const fin = parseFloat(document.getElementById('surtidor-fin').value);
   const fecha = document.getElementById('fecha').value;
-  if(!unidad || !km || !ini || !fin || !fecha){ alert('Completá todos los campos.'); return; }
-  if(fin <= ini){ alert('El nro final debe ser mayor al inicial.'); return; }
-  const litros = Math.round((fin - ini) * 10) / 10;
+  if(!unidad||!km||!ini||!fin||!fecha){ alert('Completá todos los campos.'); return; }
+  if(fin<=ini){ alert('El nro final debe ser mayor al inicial.'); return; }
+  const litros = Math.round((fin-ini)*10)/10;
   showLoading(true);
   const { error } = await sb.from('cargas').insert([{
     unidad, km, surtidor_inicio: ini, surtidor_fin: fin,
@@ -298,68 +377,119 @@ async function guardarCarga(){
     fecha, usuario: currentUser
   }]);
   showLoading(false);
-  if(error){ alert('Error al guardar: ' + error.message); return; }
+  if(error){ alert('Error al guardar: '+error.message); return; }
   document.getElementById('form-card').style.display = 'none';
   document.getElementById('success-card').style.display = 'block';
-  document.getElementById('success-detail').textContent = unidad + ' — ' + litros.toLocaleString('es-AR') + ' lts — ' + fecha;
+  document.getElementById('success-detail').textContent = unidad+' — '+litros.toLocaleString('es-AR')+' lts — '+fecha;
   await mostrarConsumoAlert(unidad, km, litros);
+  await checkStockAlertas();
 }
 
 async function mostrarConsumoAlert(unidad, kmActual, litros){
-  const { data } = await sb.from('cargas').select('km,litros').eq('unidad', unidad).order('km', {ascending: false}).limit(5);
+  const { data } = await sb.from('cargas').select('km,litros').eq('unidad',unidad).order('km',{ascending:false}).limit(5);
   const alerta = document.getElementById('consumo-alert');
-  if(!data || data.length < 2){ alerta.style.display = 'none'; return; }
+  if(!data||data.length<2){ alerta.style.display='none'; return; }
   const anterior = data.find(d => d.km < kmActual);
-  if(!anterior){ alerta.style.display = 'none'; return; }
+  if(!anterior){ alerta.style.display='none'; return; }
   const kmRec = kmActual - anterior.km;
-  if(kmRec <= 0){ alerta.style.display = 'none'; return; }
-  const ltsKm = litros / kmRec;
-  const kmLt = kmRec / litros;
+  if(kmRec<=0){ alerta.style.display='none'; return; }
+  const ltsKm = litros/kmRec;
+  const kmLt = kmRec/litros;
   const promData = data.slice(1);
   let promLtsKm = ltsKm;
-  if(promData.length >= 2){
-    let suma = 0, n = 0;
-    for(let i = 1; i < promData.length; i++){
-      const dr = promData[i-1].km - promData[i].km;
-      if(dr > 0){ suma += promData[i-1].litros / dr; n++; }
+  if(promData.length>=2){
+    let suma=0,n=0;
+    for(let i=1;i<promData.length;i++){
+      const dr=promData[i-1].km-promData[i].km;
+      if(dr>0){ suma+=promData[i-1].litros/dr; n++; }
     }
-    if(n > 0) promLtsKm = suma / n;
+    if(n>0) promLtsKm=suma/n;
   }
-  const desvio = Math.abs(ltsKm - promLtsKm) / promLtsKm;
-  let cls, msg;
-  if(desvio > 0.2){ cls = 'alert-box alert-danger'; msg = 'Consumo ' + ltsKm.toFixed(3) + ' lts/km — Promedio: ' + promLtsKm.toFixed(3) + ' lts/km. Variacion del ' + Math.round(desvio*100) + '% — revisar!'; }
-  else if(desvio > 0.1){ cls = 'alert-box alert-warn'; msg = 'Consumo: ' + ltsKm.toFixed(3) + ' lts/km (' + kmLt.toFixed(1) + ' km/lt) — leve variacion vs promedio'; }
-  else { cls = 'alert-box alert-ok'; msg = 'Consumo: ' + ltsKm.toFixed(3) + ' lts/km (' + kmLt.toFixed(1) + ' km/lt) — normal'; }
-  alerta.className = cls;
-  alerta.textContent = msg;
-  alerta.style.display = 'block';
+  const desvio=Math.abs(ltsKm-promLtsKm)/promLtsKm;
+  let cls,msg;
+  if(desvio>0.2){ cls='alert-box alert-danger'; msg='Consumo '+ltsKm.toFixed(3)+' lts/km — Promedio: '+promLtsKm.toFixed(3)+' lts/km. Variacion del '+Math.round(desvio*100)+'% — revisar!'; }
+  else if(desvio>0.1){ cls='alert-box alert-warn'; msg='Consumo: '+ltsKm.toFixed(3)+' lts/km ('+kmLt.toFixed(1)+' km/lt) — leve variacion vs promedio'; }
+  else { cls='alert-box alert-ok'; msg='Consumo: '+ltsKm.toFixed(3)+' lts/km ('+kmLt.toFixed(1)+' km/lt) — normal'; }
+  alerta.className=cls; alerta.textContent=msg; alerta.style.display='block';
 }
 
 function nuevaCarga(){
-  document.getElementById('form-card').style.display = 'block';
-  document.getElementById('success-card').style.display = 'none';
-  ['unidad','km','surtidor-inicio','surtidor-fin'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('litros-box').style.display = 'none';
-  document.getElementById('fecha').value = hoy;
+  document.getElementById('form-card').style.display='block';
+  document.getElementById('success-card').style.display='none';
+  ['unidad','km','surtidor-inicio','surtidor-fin'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('litros-box').style.display='none';
+  document.getElementById('fecha').value=hoy;
 }
 
+// ── CHECK STOCK ALERTAS ──
+async function checkStockAlertas(){
+  const umbralComun   = parseInt(localStorage.getItem('umbral_comun')||'0');
+  const umbralPremium = parseInt(localStorage.getItem('umbral_premium')||'0');
+  const waNumero      = localStorage.getItem('wa_numero')||'';
+  if(!umbralComun && !umbralPremium) return;
+
+  const { data: cargas }  = await sb.from('cargas').select('tipo,litros');
+  const { data: repos }   = await sb.from('reposiciones').select('tipo,litros');
+  if(!cargas||!repos) return;
+
+  const despComun  = cargas.filter(c=>c.tipo==='comun').reduce((s,c)=>s+c.litros,0);
+  const despPrem   = cargas.filter(c=>c.tipo==='premium').reduce((s,c)=>s+c.litros,0);
+  const repComun   = repos.filter(r=>r.tipo==='comun').reduce((s,r)=>s+r.litros,0);
+  const repPrem    = repos.filter(r=>r.tipo==='premium').reduce((s,r)=>s+r.litros,0);
+  const stockComun = Math.round(repComun - despComun);
+  const stockPrem  = Math.round(repPrem  - despPrem);
+
+  // Alerta común
+  const elComun = document.getElementById('alerta-stock-comun');
+  if(umbralComun>0 && repComun>0 && stockComun<=umbralComun){
+    document.getElementById('alerta-stock-comun-txt').innerHTML =
+      'Stock actual: <strong>'+stockComun.toLocaleString('es-AR')+' lts</strong> — Umbral: '+umbralComun.toLocaleString('es-AR')+' lts'+
+      (waNumero ? '<br><a href="'+generarLinkWA('común', stockComun)+'" target="_blank" style="display:inline-block;margin-top:8px;background:#25D366;color:white;padding:6px 14px;border-radius:8px;font-weight:600;text-decoration:none">📱 Avisar por WhatsApp</a>' : '');
+    elComun.style.display='block';
+  } else { elComun.style.display='none'; }
+
+  // Alerta premium
+  const elPrem = document.getElementById('alerta-stock-premium');
+  if(umbralPremium>0 && repPrem>0 && stockPrem<=umbralPremium){
+    document.getElementById('alerta-stock-premium-txt').innerHTML =
+      'Stock actual: <strong>'+stockPrem.toLocaleString('es-AR')+' lts</strong> — Umbral: '+umbralPremium.toLocaleString('es-AR')+' lts'+
+      (waNumero ? '<br><a href="'+generarLinkWA('premium', stockPrem)+'" target="_blank" style="display:inline-block;margin-top:8px;background:#25D366;color:white;padding:6px 14px;border-radius:8px;font-weight:600;text-decoration:none">📱 Avisar por WhatsApp</a>' : '');
+    elPrem.style.display='block';
+  } else { elPrem.style.display='none'; }
+}
+
+function generarLinkWA(tipo, stock){
+  const waNumero = localStorage.getItem('wa_numero')||'';
+  const fecha = new Date().toLocaleDateString('es-AR');
+  const msg = encodeURIComponent(
+    '⚠️ ALERTA STOCK COMBUSTIBLE\n'+
+    'Gas Oil '+tipo.toUpperCase()+': '+stock.toLocaleString('es-AR')+' lts disponibles\n'+
+    'Fecha: '+fecha+'\n'+
+    'Por favor coordinar reposición.'
+  );
+  return 'https://wa.me/'+waNumero+'?text='+msg;
+}
+
+// ── PANEL ──
 async function loadPanel(){
-  const { data: todas } = await sb.from('cargas').select('*').order('created_at', {ascending: false}).limit(100);
-  if(!todas){ return; }
-  const hoyCargas = todas.filter(c => c.fecha === hoy);
+  const { data: todas } = await sb.from('cargas').select('*').order('created_at',{ascending:false}).limit(200);
+  if(!todas) return;
+
+  const hoyCargas = todas.filter(c=>c.fecha===hoy);
   document.getElementById('p-cargas-hoy').textContent = hoyCargas.length;
   document.getElementById('p-lts-hoy').textContent = Math.round(hoyCargas.reduce((s,c)=>s+c.litros,0)).toLocaleString('es-AR');
-  const kmMap = {};
-  todas.forEach(c => { if(!kmMap[c.unidad] || c.km > kmMap[c.unidad]) kmMap[c.unidad] = c.km; });
-  const kmDiv = document.getElementById('p-km-unidades');
-  const entries = Object.entries(kmMap);
-  kmDiv.innerHTML = entries.length ? entries.map(([u,km]) => `
+
+  const kmMap={};
+  todas.forEach(c=>{ if(!kmMap[c.unidad]||c.km>kmMap[c.unidad]) kmMap[c.unidad]=c.km; });
+  const kmDiv=document.getElementById('p-km-unidades');
+  const entries=Object.entries(kmMap);
+  kmDiv.innerHTML=entries.length?entries.map(([u,km])=>`
     <div class="row-item"><span style="font-weight:600">${u}</span>
     <span style="color:#555">${km.toLocaleString('es-AR')} km</span></div>`).join('')
-    : '<p style="font-size:13px;color:#888;text-align:center;padding:.75rem 0">Sin datos</p>';
-  const ul = document.getElementById('p-ultimas');
-  const ult = todas.slice(0,8);
-  ul.innerHTML = ult.length ? ult.map(c => `
+    :'<p style="font-size:13px;color:#888;text-align:center;padding:.75rem 0">Sin datos</p>';
+
+  const ul=document.getElementById('p-ultimas');
+  ul.innerHTML=todas.slice(0,8).map(c=>`
     <div class="row-item">
       <div><span style="font-weight:600">${c.unidad}</span>
         <span style="font-size:12px;color:#888;margin-left:6px">${c.fecha}</span><br>
@@ -369,54 +499,128 @@ async function loadPanel(){
         <span style="font-weight:600">${Math.round(c.litros).toLocaleString('es-AR')} lts</span><br>
         <span class="badge ${c.tipo==='premium'?'badge-green':'badge-blue'}">${c.tipo==='premium'?'Premium':'Común'}</span>
       </div>
-    </div>`).join('')
-    : '<p style="font-size:13px;color:#888;text-align:center;padding:.75rem 0">Sin cargas</p>';
+    </div>`).join('') || '<p style="font-size:13px;color:#888;text-align:center;padding:.75rem 0">Sin cargas</p>';
+
+  // Cargar meses disponibles para export
+  const meses = [...new Set(todas.map(c=>c.fecha.substring(0,7)))].sort().reverse();
+  const sel = document.getElementById('export-mes');
+  sel.innerHTML = '<option value="">— Seleccionar mes —</option>' +
+    meses.map(m => {
+      const [y,mo] = m.split('-');
+      const nombre = new Date(y,parseInt(mo)-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+      return `<option value="${m}">${nombre}</option>`;
+    }).join('');
 }
 
+// ── EXPORTAR EXCEL ──
+async function exportarExcel(){
+  const mes = document.getElementById('export-mes').value;
+  if(!mes){ alert('Seleccioná un mes primero.'); return; }
+  showLoading(true);
+  const { data } = await sb.from('cargas').select('*')
+    .gte('fecha', mes+'-01').lte('fecha', mes+'-31')
+    .order('fecha',{ascending:true}).order('created_at',{ascending:true});
+  showLoading(false);
+  if(!data||!data.length){ alert('No hay cargas para ese mes.'); return; }
+
+  const [y,mo] = mes.split('-');
+  const nombreMes = new Date(y,parseInt(mo)-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).toUpperCase();
+
+  // Build worksheet data
+  const headers = ['FECHA','PATENTE','KM UNIDAD','INICIO SURTIDOR','FINAL SURTIDOR','LITROS','TIPO GO','TIPO CARGA','USUARIO'];
+  const rows = data.map(c => [
+    c.fecha, c.unidad, c.km,
+    c.surtidor_inicio, c.surtidor_fin, c.litros,
+    c.tipo==='premium'?'GAS OIL PREMIUM':'GAS OIL COMÚN',
+    c.carga_tipo==='lleno'?'TANQUE LLENO':'RECARGA PARCIAL',
+    c.usuario
+  ]);
+
+  // Resumen por equipo
+  const resumen = {};
+  data.forEach(c=>{
+    if(!resumen[c.unidad]) resumen[c.unidad]={cargas:0,litros:0};
+    resumen[c.unidad].cargas++;
+    resumen[c.unidad].litros+=c.litros;
+  });
+
+  const wb = XLSX.utils.book_new();
+
+  // Hoja 1: detalle
+  const ws1data = [['CONTROL DE COMBUSTIBLE — '+nombreMes], [], headers, ...rows];
+  const ws1 = XLSX.utils.aoa_to_sheet(ws1data);
+  ws1['!cols'] = [{wch:10},{wch:12},{wch:14},{wch:16},{wch:16},{wch:10},{wch:18},{wch:16},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, ws1, 'Cargas '+mes);
+
+  // Hoja 2: resumen
+  const resRows = [
+    ['RESUMEN POR EQUIPO — '+nombreMes], [],
+    ['PATENTE','N° CARGAS','LTS TOTAL','PROM LTS/CARGA'],
+    ...Object.entries(resumen).map(([u,v])=>[u, v.cargas, Math.round(v.litros), Math.round(v.litros/v.cargas)]),
+    [],
+    ['TOTAL', data.length, Math.round(data.reduce((s,c)=>s+c.litros,0)), '']
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(resRows);
+  ws2['!cols'] = [{wch:14},{wch:12},{wch:14},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
+
+  XLSX.writeFile(wb, 'combustible_'+mes+'.xlsx');
+}
+
+// ── CONSUMO ──
 async function loadConsumo(){
-  const { data } = await sb.from('cargas').select('unidad,km,litros').order('km', {ascending: true});
-  if(!data){ return; }
-  const porUnidad = {};
-  data.forEach(c => { if(!porUnidad[c.unidad]) porUnidad[c.unidad]=[]; porUnidad[c.unidad].push(c); });
-  const div = document.getElementById('c-tabla');
-  let html = '';
-  Object.entries(porUnidad).forEach(([u, cargas]) => {
-    if(cargas.length < 2){ html += `<div class="row-item"><span style="font-weight:600">${u}</span><span class="badge badge-gray">1 carga</span></div>`; return; }
-    const consumos = [];
+  const { data } = await sb.from('cargas').select('unidad,km,litros').order('km',{ascending:true});
+  if(!data) return;
+  const porUnidad={};
+  data.forEach(c=>{ if(!porUnidad[c.unidad]) porUnidad[c.unidad]=[]; porUnidad[c.unidad].push(c); });
+  const div=document.getElementById('c-tabla');
+  let html='';
+  Object.entries(porUnidad).forEach(([u,cargas])=>{
+    if(cargas.length<2){ html+=`<div class="row-item"><span style="font-weight:600">${u}</span><span class="badge badge-gray">1 carga</span></div>`; return; }
+    const consumos=[];
     for(let i=1;i<cargas.length;i++){
-      const dr = cargas[i].km - cargas[i-1].km;
+      const dr=cargas[i].km-cargas[i-1].km;
       if(dr>0) consumos.push(cargas[i].litros/dr);
     }
-    if(!consumos.length){ return; }
-    const avg = consumos.reduce((s,v)=>s+v,0)/consumos.length;
-    const last = consumos[consumos.length-1];
-    const desvio = consumos.length>1 ? Math.abs(last-avg)/avg : 0;
-    const badgeClass = desvio>0.2?'badge-red':desvio>0.1?'badge-amber':'badge-green';
-    const badgeTxt = desvio>0.2?'Revisar':'Normal';
-    html += `<div class="row-item">
+    if(!consumos.length) return;
+    const avg=consumos.reduce((s,v)=>s+v,0)/consumos.length;
+    const last=consumos[consumos.length-1];
+    const desvio=consumos.length>1?Math.abs(last-avg)/avg:0;
+    const badgeClass=desvio>0.2?'badge-red':desvio>0.1?'badge-amber':'badge-green';
+    const badgeTxt=desvio>0.2?'Revisar':'Normal';
+    html+=`<div class="row-item">
       <div><span style="font-weight:600">${u}</span><br>
-        <span style="font-size:12px;color:#888">${cargas.length} cargas registradas</span></div>
+        <span style="font-size:12px;color:#888">${cargas.length} cargas</span></div>
       <div style="text-align:right">
         <span style="font-weight:600;font-size:14px">${avg.toFixed(3)} lts/km</span><br>
         <span style="font-size:12px;color:#888">${(1/avg).toFixed(2)} km/lt</span><br>
         <span class="badge ${badgeClass}">${badgeTxt}</span>
       </div></div>`;
   });
-  div.innerHTML = html || '<p style="font-size:13px;color:#888;text-align:center;padding:.75rem 0">Necesitás al menos 2 cargas por unidad</p>';
+  div.innerHTML=html||'<p style="font-size:13px;color:#888;text-align:center;padding:.75rem 0">Necesitás al menos 2 cargas por unidad</p>';
 }
 
+// ── TANQUES ──
 async function loadTanques(){
-  const { data: cargas } = await sb.from('cargas').select('tipo,litros');
-  const { data: repos } = await sb.from('reposiciones').select('tipo,litros').order('fecha',{ascending:false});
-  if(!cargas || !repos){ return; }
-  const despComun = cargas.filter(c=>c.tipo==='comun').reduce((s,c)=>s+c.litros,0);
-  const despPrem = cargas.filter(c=>c.tipo==='premium').reduce((s,c)=>s+c.litros,0);
-  const repComun = repos.filter(r=>r.tipo==='comun').reduce((s,r)=>s+r.litros,0);
-  const repPrem = repos.filter(r=>r.tipo==='premium').reduce((s,r)=>s+r.litros,0);
-  document.getElementById('t-stock-comun').textContent = repComun>0 ? Math.round(repComun-despComun).toLocaleString('es-AR')+' lts' : 'Sin datos';
-  document.getElementById('t-stock-premium').textContent = repPrem>0 ? Math.round(repPrem-despPrem).toLocaleString('es-AR')+' lts' : 'Sin datos';
-  const div = document.getElementById('t-repos');
-  div.innerHTML = repos.length ? repos.slice(0,10).map(r=>`
+  const { data: cargas }=await sb.from('cargas').select('tipo,litros');
+  const { data: repos }=await sb.from('reposiciones').select('*').order('fecha',{ascending:false});
+  if(!cargas||!repos) return;
+  const despComun=cargas.filter(c=>c.tipo==='comun').reduce((s,c)=>s+c.litros,0);
+  const despPrem=cargas.filter(c=>c.tipo==='premium').reduce((s,c)=>s+c.litros,0);
+  const repComun=repos.filter(r=>r.tipo==='comun').reduce((s,r)=>s+r.litros,0);
+  const repPrem=repos.filter(r=>r.tipo==='premium').reduce((s,r)=>s+r.litros,0);
+  const stComun=Math.round(repComun-despComun);
+  const stPrem=Math.round(repPrem-despPrem);
+  const umbC=parseInt(localStorage.getItem('umbral_comun')||'0');
+  const umbP=parseInt(localStorage.getItem('umbral_premium')||'0');
+  document.getElementById('t-stock-comun').textContent=repComun>0?stComun.toLocaleString('es-AR')+' lts':'Sin datos';
+  document.getElementById('t-stock-comun').style.color=umbC>0&&stComun<=umbC?'#C00000':'#1F4E79';
+  document.getElementById('t-stock-premium').textContent=repPrem>0?stPrem.toLocaleString('es-AR')+' lts':'Sin datos';
+  document.getElementById('t-stock-premium').style.color=umbP>0&&stPrem<=umbP?'#C00000':'#27500A';
+  document.getElementById('umbral-comun-txt').textContent=umbC>0?umbC.toLocaleString('es-AR'):'no configurado';
+  document.getElementById('umbral-premium-txt').textContent=umbP>0?umbP.toLocaleString('es-AR'):'no configurado';
+  const div=document.getElementById('t-repos');
+  div.innerHTML=repos.length?repos.slice(0,10).map(r=>`
     <div class="row-item">
       <div><span style="font-weight:600">Remito ${r.remito}</span><br>
         <span style="font-size:12px;color:#888">${r.fecha}${r.proveedor?' | '+r.proveedor:''}</span></div>
@@ -424,25 +628,61 @@ async function loadTanques(){
         <span style="font-weight:600">${Math.round(r.litros).toLocaleString('es-AR')} lts</span><br>
         <span class="badge ${r.tipo==='premium'?'badge-green':'badge-blue'}">${r.tipo==='premium'?'Premium':'Común'}</span>
       </div></div>`).join('')
-    : '<p style="font-size:13px;color:#888;text-align:center;padding:.75rem 0">Sin reposiciones</p>';
+    :'<p style="font-size:13px;color:#888;text-align:center;padding:.75rem 0">Sin reposiciones</p>';
 }
 
 async function guardarReposicion(){
-  const litros = parseFloat(document.getElementById('rep-litros').value);
-  const remito = document.getElementById('rep-remito').value.trim();
-  const proveedor = document.getElementById('rep-proveedor').value.trim();
-  const fecha = document.getElementById('rep-fecha').value;
+  const litros=parseFloat(document.getElementById('rep-litros').value);
+  const remito=document.getElementById('rep-remito').value.trim();
+  const proveedor=document.getElementById('rep-proveedor').value.trim();
+  const fecha=document.getElementById('rep-fecha').value;
   if(!litros||litros<=0){ alert('Ingresá los litros.'); return; }
   if(!remito){ alert('Ingresá el nro de remito.'); return; }
   showLoading(true);
-  const { error } = await sb.from('reposiciones').insert([{ tipo: repTipo, litros, remito, proveedor, fecha }]);
+  const { error }=await sb.from('reposiciones').insert([{tipo:repTipo,litros,remito,proveedor,fecha}]);
   showLoading(false);
-  if(error){ alert('Error: ' + error.message); return; }
+  if(error){ alert('Error: '+error.message); return; }
   document.getElementById('rep-litros').value='';
   document.getElementById('rep-remito').value='';
   document.getElementById('rep-proveedor').value='';
-  alert('Reposicion registrada correctamente.');
+  alert('Reposicion registrada.');
   loadTanques();
+  checkStockAlertas();
+}
+
+// ── CONFIG ──
+function cargarConfigLocal(){
+  const umbC=localStorage.getItem('umbral_comun')||'';
+  const umbP=localStorage.getItem('umbral_premium')||'';
+  const waN=localStorage.getItem('wa_numero')||'';
+  document.getElementById('umbral-comun').value=umbC;
+  document.getElementById('umbral-premium').value=umbP;
+  document.getElementById('wa-numero').value=waN;
+  if(waN) document.getElementById('wa-preview').style.display='block';
+}
+
+function loadConfig(){
+  cargarConfigLocal();
+  document.getElementById('config-usuario').textContent='Usuario actual: '+currentUser;
+}
+
+function guardarUmbrales(){
+  const umbC=document.getElementById('umbral-comun').value;
+  const umbP=document.getElementById('umbral-premium').value;
+  if(umbC) localStorage.setItem('umbral_comun',umbC);
+  if(umbP) localStorage.setItem('umbral_premium',umbP);
+  document.getElementById('umbral-comun-txt').textContent=umbC?parseInt(umbC).toLocaleString('es-AR'):'no configurado';
+  document.getElementById('umbral-premium-txt').textContent=umbP?parseInt(umbP).toLocaleString('es-AR'):'no configurado';
+  alert('Umbrales guardados. Las alertas se activarán cuando el stock baje de esos valores.');
+  checkStockAlertas();
+}
+
+function guardarWA(){
+  const num=document.getElementById('wa-numero').value.trim();
+  if(!num){ alert('Ingresá tu número de WhatsApp.'); return; }
+  localStorage.setItem('wa_numero',num);
+  document.getElementById('wa-preview').style.display='block';
+  alert('Número guardado. Cuando el stock baje del umbral aparecerá un botón para avisar por WhatsApp.');
 }
 </script>
 </body>
