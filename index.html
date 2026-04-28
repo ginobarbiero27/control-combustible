@@ -527,12 +527,17 @@ async function exportarExcel(){
   showLoading(false);
   if(!data||!data.length){ alert('No hay cargas para ese mes.'); return; }
 
+  // Filter strictly by month in case of edge cases
+  const dataFiltrada = data.filter(c => c.fecha && c.fecha.startsWith(mes));
+
+  if(!dataFiltrada||!dataFiltrada.length){ alert('No hay cargas para ese mes.'); return; }
+
   const [y,mo] = mes.split('-');
   const nombreMes = new Date(y,parseInt(mo)-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).toUpperCase();
 
   // Build worksheet data
   const headers = ['FECHA','PATENTE','KM UNIDAD','INICIO SURTIDOR','FINAL SURTIDOR','LITROS','TIPO GO','TIPO CARGA','USUARIO'];
-  const rows = data.map(c => [
+  const rows = dataFiltrada.map(c => [
     c.fecha, c.unidad, c.km,
     c.surtidor_inicio, c.surtidor_fin, c.litros,
     c.tipo==='premium'?'GAS OIL PREMIUM':'GAS OIL COMÚN',
@@ -542,7 +547,7 @@ async function exportarExcel(){
 
   // Resumen por equipo
   const resumen = {};
-  data.forEach(c=>{
+  dataFiltrada.forEach(c=>{
     if(!resumen[c.unidad]) resumen[c.unidad]={cargas:0,litros:0};
     resumen[c.unidad].cargas++;
     resumen[c.unidad].litros+=c.litros;
@@ -562,7 +567,7 @@ async function exportarExcel(){
     ['PATENTE','N° CARGAS','LTS TOTAL','PROM LTS/CARGA'],
     ...Object.entries(resumen).map(([u,v])=>[u, v.cargas, Math.round(v.litros), Math.round(v.litros/v.cargas)]),
     [],
-    ['TOTAL', data.length, Math.round(data.reduce((s,c)=>s+c.litros,0)), '']
+    ['TOTAL', dataFiltrada.length, Math.round(dataFiltrada.reduce((s,c)=>s+c.litros,0)), '']
   ];
   const ws2 = XLSX.utils.aoa_to_sheet(resRows);
   ws2['!cols'] = [{wch:14},{wch:12},{wch:14},{wch:16}];
@@ -696,4 +701,3 @@ function guardarWA(){
 </script>
 </body>
 </html>
-
