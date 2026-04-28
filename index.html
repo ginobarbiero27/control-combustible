@@ -521,16 +521,20 @@ async function exportarExcel(){
   const mes = document.getElementById('export-mes').value;
   if(!mes){ alert('Seleccioná un mes primero.'); return; }
   showLoading(true);
+  // Traer todas las cargas y filtrar por mes del lado del cliente
   const { data } = await sb.from('cargas').select('*')
-    .gte('fecha', mes+'-01').lte('fecha', mes+'-31')
-    .order('fecha',{ascending:true}).order('created_at',{ascending:true});
+    .order('created_at',{ascending:true});
   showLoading(false);
-  if(!data||!data.length){ alert('No hay cargas para ese mes.'); return; }
+  if(!data||!data.length){ alert('No hay cargas registradas.'); return; }
 
-  // Filter strictly by month in case of edge cases
-  const dataFiltrada = data.filter(c => c.fecha && c.fecha.startsWith(mes));
+  // Filtrar por mes — soporta fecha como string '2026-04-28' o Date
+  const dataFiltrada = data.filter(c => {
+    if(!c.fecha) return false;
+    const fechaStr = typeof c.fecha === 'string' ? c.fecha : new Date(c.fecha).toISOString();
+    return fechaStr.startsWith(mes);
+  });
 
-  if(!dataFiltrada||!dataFiltrada.length){ alert('No hay cargas para ese mes.'); return; }
+  if(!dataFiltrada||!dataFiltrada.length){ alert('No hay cargas para '+mes+'. Verificá que el mes seleccionado tenga cargas registradas.'); return; }
 
   const [y,mo] = mes.split('-');
   const nombreMes = new Date(y,parseInt(mo)-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).toUpperCase();
