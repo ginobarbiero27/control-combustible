@@ -113,7 +113,7 @@
       <div class="card" id="form-card">
         <p class="section-title">Nueva carga</p>
         <label>Unidad</label>
-        <select id="unidad">
+        <select id="unidad" onchange="checkOtroUnidad()">
           <option value="">— Seleccionar —</option>
           <optgroup label="Tractores">
             <option>AH710TK</option><option>AG949PU</option><option>AB170TF</option>
@@ -121,7 +121,14 @@
             <option>FHQ054</option><option>NBA064</option>
           </optgroup>
           <optgroup label="Camioneta"><option>Camioneta empresa</option></optgroup>
+          <optgroup label="Otro">
+            <option value="__otro__">Otro / Externo...</option>
+          </optgroup>
         </select>
+        <div id="otro-unidad-box" style="display:none;margin-top:8px">
+          <input type="text" id="otro-unidad-txt" placeholder="Ej: P/Service, Auto Jalo, patente..."
+                 style="border:1.5px solid #1F4E79;background:#EBF2FA">
+        </div>
         <label>Tipo de combustible</label>
         <div class="radio-group">
           <div class="radio-btn sel-blue" id="btn-comun" onclick="selTipo('comun')">Gas oil común</div>
@@ -346,6 +353,22 @@ function selRepTipo(t){
 }
 
 // ── SURTIDOR ──
+function checkOtroUnidad(){
+  const val = document.getElementById('unidad').value;
+  const box = document.getElementById('otro-unidad-box');
+  box.style.display = val === '__otro__' ? 'block' : 'none';
+  if(val !== '__otro__') document.getElementById('otro-unidad-txt').value = '';
+}
+
+function getUnidadFinal(){
+  const val = document.getElementById('unidad').value;
+  if(val === '__otro__'){
+    const txt = document.getElementById('otro-unidad-txt').value.trim();
+    return txt || null;
+  }
+  return val || null;
+}
+
 function calcLitros(){
   const ini = parseFloat(document.getElementById('surtidor-inicio').value)||0;
   const fin = parseFloat(document.getElementById('surtidor-fin').value)||0;
@@ -364,7 +387,7 @@ document.getElementById('surtidor-fin').addEventListener('input', calcLitros);
 
 // ── GUARDAR CARGA ──
 async function guardarCarga(){
-  const unidad = document.getElementById('unidad').value;
+  const unidad = getUnidadFinal();
   const km = parseInt(document.getElementById('km').value);
   const ini = parseFloat(document.getElementById('surtidor-inicio').value);
   const fin = parseFloat(document.getElementById('surtidor-fin').value);
@@ -418,7 +441,8 @@ async function mostrarConsumoAlert(unidad, kmActual, litros){
 function nuevaCarga(){
   document.getElementById('form-card').style.display='block';
   document.getElementById('success-card').style.display='none';
-  ['unidad','km','surtidor-inicio','surtidor-fin'].forEach(id=>document.getElementById(id).value='');
+  ['unidad','km','surtidor-inicio','surtidor-fin','otro-unidad-txt'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('otro-unidad-box').style.display='none';
   document.getElementById('litros-box').style.display='none';
   document.getElementById('fecha').value=hoy;
 }
