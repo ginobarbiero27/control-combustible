@@ -268,6 +268,32 @@
   </div>
 </div>
 
+<!-- MODAL EDITAR CARGA -->
+<div id="modal-carga" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px">
+  <div style="background:white;border-radius:16px;padding:20px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto">
+    <div style="font-weight:700;font-size:16px;margin-bottom:14px;color:#1F4E79">Editar carga</div>
+    <label style="font-size:13px;color:#555;display:block;margin-bottom:4px;font-weight:500">Unidad</label>
+    <input type="text" id="edit-unidad" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">
+    <label style="font-size:13px;color:#555;display:block;margin-bottom:4px;font-weight:500">Fecha</label>
+    <input type="date" id="edit-fecha" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px">
+    <label style="font-size:13px;color:#555;display:block;margin-bottom:4px;font-weight:500">KM unidad</label>
+    <input type="number" id="edit-km" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px" inputmode="numeric">
+    <label style="font-size:13px;color:#555;display:block;margin-bottom:4px;font-weight:500">Inicio surtidor</label>
+    <input type="number" id="edit-ini" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px" inputmode="numeric">
+    <label style="font-size:13px;color:#555;display:block;margin-bottom:4px;font-weight:500">Final surtidor</label>
+    <input type="number" id="edit-fin" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:10px" inputmode="numeric">
+    <label style="font-size:13px;color:#555;display:block;margin-bottom:4px;font-weight:500">Tipo GO</label>
+    <select id="edit-tipo" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:16px">
+      <option value="comun">Gas oil común</option>
+      <option value="premium">Gas oil premium</option>
+    </select>
+    <div style="display:flex;gap:8px">
+      <button onclick="cerrarModalCarga()" style="flex:1;padding:10px;background:white;color:#1F4E79;border:1.5px solid #1F4E79;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">Cancelar</button>
+      <button onclick="guardarEdicion()" style="flex:1;padding:10px;background:#1F4E79;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="loading-overlay" id="loading"><div class="spinner"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -286,6 +312,58 @@ document.getElementById('rep-fecha').value = hoy;
 document.getElementById('header-fecha').textContent = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
 
 function showLoading(v){ document.getElementById('loading').style.display = v ? 'flex' : 'none'; }
+
+let cargaEditando = null;
+
+function editarCarga(c){
+  cargaEditando = c;
+  document.getElementById('edit-unidad').value = c.unidad;
+  document.getElementById('edit-fecha').value = c.fecha;
+  document.getElementById('edit-km').value = c.km;
+  document.getElementById('edit-ini').value = c.surtidor_inicio;
+  document.getElementById('edit-fin').value = c.surtidor_fin;
+  document.getElementById('edit-tipo').value = c.tipo;
+  const modal = document.getElementById('modal-carga');
+  modal.style.display = 'flex';
+}
+
+function cerrarModalCarga(){
+  document.getElementById('modal-carga').style.display = 'none';
+  cargaEditando = null;
+}
+
+async function guardarEdicion(){
+  if(!cargaEditando) return;
+  const km = parseInt(document.getElementById('edit-km').value);
+  const ini = parseFloat(document.getElementById('edit-ini').value);
+  const fin = parseFloat(document.getElementById('edit-fin').value);
+  if(fin <= ini){ alert('El final debe ser mayor al inicio'); return; }
+  const litros = Math.round((fin - ini) * 10) / 10;
+  showLoading(true);
+  const { error } = await sb.from('cargas').update({
+    unidad: document.getElementById('edit-unidad').value,
+    fecha: document.getElementById('edit-fecha').value,
+    km: km,
+    surtidor_inicio: ini,
+    surtidor_fin: fin,
+    litros: litros,
+    tipo: document.getElementById('edit-tipo').value,
+  }).eq('id', cargaEditando.id);
+  showLoading(false);
+  if(error){ alert('Error: ' + error.message); return; }
+  cerrarModalCarga();
+  loadPanel();
+  alert('Carga actualizada correctamente');
+}
+
+async function eliminarCarga(id){
+  if(!confirm('¿Seguro que querés eliminar esta carga? Esta acción no se puede deshacer.')) return;
+  showLoading(true);
+  const { error } = await sb.from('cargas').delete().eq('id', id);
+  showLoading(false);
+  if(error){ alert('Error: ' + error.message); return; }
+  loadPanel();
+}
 
 // ── LOGIN ──
 async function doLogin(){
@@ -408,6 +486,14 @@ async function guardarCarga(){
     }
   }
   const litros = Math.round((fin-ini)*10)/10;
+  // Proteccion contra duplicados: verificar si ya existe una carga igual
+  const { data: dupCheck } = await sb.from('cargas').select('id')
+    .eq('unidad', unidad).eq('fecha', fecha)
+    .eq('surtidor_inicio', ini).eq('surtidor_fin', fin).limit(1);
+  if(dupCheck && dupCheck.length > 0){
+    alert('⚠️ Esta carga ya está registrada (misma unidad, fecha y surtidor). No se guardó para evitar duplicados.');
+    return;
+  }
   showLoading(true);
   const { error } = await sb.from('cargas').insert([{
     unidad, km, surtidor_inicio: ini, surtidor_fin: fin,
@@ -530,15 +616,26 @@ async function loadPanel(){
     :'<p style="font-size:13px;color:#888;text-align:center;padding:.75rem 0">Sin datos</p>';
 
   const ul=document.getElementById('p-ultimas');
-  ul.innerHTML=todas.slice(0,8).map(c=>`
-    <div class="row-item">
-      <div><span style="font-weight:600">${c.unidad}</span>
+  ul.innerHTML=todas.slice(0,15).map(c=>`
+    <div class="row-item" style="align-items:center">
+      <div style="flex:1">
+        <span style="font-weight:600">${c.unidad}</span>
         <span style="font-size:12px;color:#888;margin-left:6px">${c.fecha}</span><br>
         <span style="font-size:12px;color:#888">${c.km.toLocaleString('es-AR')} km | ${c.usuario}</span>
       </div>
-      <div style="text-align:right">
+      <div style="text-align:right;margin-right:8px">
         <span style="font-weight:600">${Math.round(c.litros).toLocaleString('es-AR')} lts</span><br>
         <span class="badge ${c.tipo==='premium'?'badge-green':'badge-blue'}">${c.tipo==='premium'?'Premium':'Común'}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <button onclick="editarCarga(${JSON.stringify(c).replace(/"/g,'&quot;')})" 
+          style="padding:3px 8px;border:1px solid #2E75B6;border-radius:6px;background:#EBF2FA;color:#1F4E79;font-size:11px;cursor:pointer;font-family:inherit">
+          Editar
+        </button>
+        <button onclick="eliminarCarga('${c.id}')" 
+          style="padding:3px 8px;border:1px solid #C00000;border-radius:6px;background:#FCEBEB;color:#C00000;font-size:11px;cursor:pointer;font-family:inherit">
+          Borrar
+        </button>
       </div>
     </div>`).join('') || '<p style="font-size:13px;color:#888;text-align:center;padding:.75rem 0">Sin cargas</p>';
 
