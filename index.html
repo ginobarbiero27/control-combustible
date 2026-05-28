@@ -103,6 +103,7 @@
     <div class="tabs">
       <button class="tab active" onclick="showScreen('carga',this)">Cargar</button>
       <button class="tab" onclick="showScreen('panel',this)">Panel</button>
+      <button class="tab" onclick="showScreen('historial',this)">Historial</button>
       <button class="tab" onclick="showScreen('consumo',this)">Consumo</button>
       <button class="tab" onclick="showScreen('tanques',this)">Tanques</button>
       <button class="tab" onclick="showScreen('config',this)">Config</button>
@@ -186,6 +187,33 @@
         </select>
         <button class="btn-green" onclick="exportarExcel()">📥 Descargar Excel</button>
       </div>
+    </div>
+
+    <!-- HISTORIAL -->
+    <div id="screen-historial" class="screen">
+      <div class="card" style="padding:10px">
+        <input type="text" id="hist-buscar" placeholder="Buscar por patente o chofer..." 
+               oninput="loadHistorial()" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <select id="hist-unidad" onchange="loadHistorial()" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px">
+            <option value="">Todas las unidades</option>
+            <optgroup label="Tractores">
+              <option>AH710TK</option><option>AG949PU</option><option>AB170TF</option>
+              <option>MAT440</option><option>KPB020</option><option>ILC195</option>
+              <option>FHQ054</option><option>NBA064</option>
+            </optgroup>
+          </select>
+          <select id="hist-tipo" onchange="loadHistorial()" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px">
+            <option value="">Todos los tipos</option>
+            <option value="comun">Gas oil común</option>
+            <option value="premium">Gas oil premium</option>
+          </select>
+        </div>
+        <select id="hist-mes" onchange="loadHistorial()" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px">
+          <option value="">Todos los meses</option>
+        </select>
+      </div>
+      <div id="historial-lista"><div class="spinner" style="margin:1rem auto"></div></div>
     </div>
 
     <!-- CONSUMO -->
@@ -402,9 +430,87 @@ function showScreen(name, el){
   document.getElementById('screen-' + name).classList.add('active');
   el.classList.add('active');
   if(name === 'panel') loadPanel();
+  if(name === 'historial') { loadHistorial(); loadMesesHistorial(); }
   if(name === 'consumo') loadConsumo();
   if(name === 'tanques') loadTanques();
   if(name === 'config') loadConfig();
+}
+
+async function loadMesesHistorial(){
+  const { data } = await sb.from('cargas').select('fecha').order('fecha',{ascending:false});
+  if(!data) return;
+  const meses=[...new Set(data.map(c=>c.fecha?.substring(0,7)).filter(Boolean))].sort().reverse();
+  const sel=document.getElementById('hist-mes');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Todos los meses</option>'+meses.map(m=>{
+    const[y,mo]=m.split('-');
+    const n=new Date(y,parseInt(mo)-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+    return '<option value="'+m+'"'+(m===cur?' selected':'')+'>'+n+'</option>';
+  }).join('');
+}
+
+async function loadHistorial(){
+  const buscar = document.getElementById('hist-buscar').value.trim().toLowerCase();
+  const unidad = document.getElementById('hist-unidad').value;
+  const tipo   = document.getElementById('hist-tipo').value;
+  const mes    = document.getElementById('hist-mes').value;
+
+  let query = sb.from('cargas').select('*').order('fecha',{ascending:false}).order('created_at',{ascending:false}).limit(200);
+  if(unidad) query = query.eq('unidad', unidad);
+  if(tipo)   query = query.eq('tipo', tipo);
+  if(mes)    query = query.gte('fecha', mes+'-01').lte('fecha', mes+'-31');
+
+  const { data } = await query;
+  const div = document.getElementById('historial-lista');
+  if(!data){ div.innerHTML='<p style="font-size:13px;color:#888;text-align:center;padding:1rem">Error al cargar</p>'; return; }
+
+  let filtrado = data;
+  if(buscar){
+    filtrado = data.filter(c =>
+      c.unidad?.toLowerCase().includes(buscar) ||
+      c.usuario?.toLowerCase().includes(buscar)
+    );
+  }
+
+  if(!filtrado.length){ div.innerHTML='<p style="font-size:13px;color:#888;text-align:center;padding:1rem">Sin resultados</p>'; return; }
+
+  // Totales
+  const totalLts = filtrado.reduce((s,c)=>s+c.litros,0);
+
+  div.innerHTML =
+    '<div style="background:#EBF2FA;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;font-size:13px">'+
+    '<span style="color:#1F4E79;font-weight:600">'+filtrado.length+' cargas</span>'+
+    '<span style="color:#1F4E79;font-weight:600">'+Math.round(totalLts).toLocaleString('es-AR')+' lts total</span>'+
+    '</div>' +
+    filtrado.map(c=>`
+    <div style="background:white;border-radius:10px;padding:12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div>
+          <span style="font-weight:700;font-size:14px;color:#1F4E79">${c.unidad}</span>
+          <span style="font-size:12px;color:#888;margin-left:6px">${c.fecha}</span>
+          <br><span style="font-size:12px;color:#888">${c.km?.toLocaleString('es-AR')||'—'} km | ${c.usuario||'—'}</span>
+        </div>
+        <div style="text-align:right">
+          <span style="font-weight:700;font-size:15px">${Math.round(c.litros).toLocaleString('es-AR')} lts</span><br>
+          <span class="badge ${c.tipo==='premium'?'badge-green':'badge-blue'}">${c.tipo==='premium'?'Premium':'Común'}</span>
+        </div>
+      </div>
+      <div style="background:#f8f9fa;border-radius:8px;padding:6px 10px;font-size:12px;color:#555;display:flex;justify-content:space-between">
+        <span>Surtidor inicio: <strong>${c.surtidor_inicio?.toLocaleString('es-AR')||'—'}</strong></span>
+        <span>Final: <strong>${c.surtidor_fin?.toLocaleString('es-AR')||'—'}</strong></span>
+        <span>Dif: <strong>${c.surtidor_fin&&c.surtidor_inicio?Math.round(c.surtidor_fin-c.surtidor_inicio).toLocaleString('es-AR'):Math.round(c.litros).toLocaleString('es-AR')} lts</strong></span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button onclick="editarCarga(${JSON.stringify(c).replace(/"/g,'&quot;')})"
+          style="padding:4px 12px;border:1px solid #2E75B6;border-radius:6px;background:#EBF2FA;color:#1F4E79;font-size:11px;cursor:pointer;font-family:inherit">
+          Editar
+        </button>
+        <button onclick="eliminarCarga('${c.id}')"
+          style="padding:4px 12px;border:1px solid #C00000;border-radius:6px;background:#FCEBEB;color:#C00000;font-size:11px;cursor:pointer;font-family:inherit">
+          Borrar
+        </button>
+      </div>
+    </div>`).join('');
 }
 
 // ── TIPO SELECTORS ──
