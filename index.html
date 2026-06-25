@@ -149,13 +149,18 @@
           <div class="radio-btn" id="btn-recarga" onclick="selCarga('recarga')" style="opacity:.5">Recarga parcial</div>
         </div>
         <label>Fecha</label>
-        <input type="date" id="fecha">
-        <!-- Hora automática — solo informativa, no editable -->
-        <div style="margin-top:10px;background:#f8f9fa;border-radius:8px;padding:10px 12px;font-size:13px;color:#555;display:flex;justify-content:space-between;align-items:center">
+        <input type="date" id="fecha" onchange="onFechaChange()">
+        <!-- Hora: automática si es hoy, manual si es otra fecha -->
+        <div id="hora-auto-box" style="margin-top:10px;background:#f8f9fa;border-radius:8px;padding:10px 12px;font-size:13px;color:#555;display:flex;justify-content:space-between;align-items:center">
           <span>🕐 Hora de carga</span>
           <span id="hora-display" style="font-weight:700;color:#1F4E79;font-size:15px">—</span>
         </div>
-        <p style="font-size:11px;color:#aaa;margin-top:4px;text-align:right">Se registra automáticamente al guardar</p>
+        <p id="hora-auto-txt" style="font-size:11px;color:#aaa;margin-top:4px;text-align:right">Se registra automáticamente al guardar</p>
+        <div id="hora-manual-box" style="display:none;margin-top:10px">
+          <label style="margin-top:0">🕐 Hora de la carga</label>
+          <input type="time" id="hora-manual" style="border:1.5px solid #1F4E79;background:#EBF2FA">
+          <p style="font-size:11px;color:#888;margin-top:4px">Ingresá la hora real en que se realizó la carga</p>
+        </div>
         <button class="btn-primary" onclick="guardarCarga()">Confirmar carga</button>
       </div>
       <div id="success-card" style="display:none">
@@ -355,6 +360,16 @@ setInterval(actualizarReloj, 1000);
 function getHoraActual(){
   const ahora = new Date();
   return ahora.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});
+}
+
+// Cuando cambia la fecha: si es hoy → hora automática; si es otra → campo manual
+function onFechaChange(){
+  const fechaVal = document.getElementById('fecha').value;
+  const esHoy = fechaVal === hoy;
+  document.getElementById('hora-auto-box').style.display = esHoy ? 'flex' : 'none';
+  document.getElementById('hora-auto-txt').style.display = esHoy ? 'block' : 'none';
+  document.getElementById('hora-manual-box').style.display = esHoy ? 'none' : 'block';
+  if(!esHoy) document.getElementById('hora-manual').value = '';
 }
 
 // Formatear hora para mostrar (HH:MM)
@@ -605,8 +620,16 @@ async function guardarCarga(){
   if(!unidad||!km||!ini||!fin||!fecha){ alert('Completá todos los campos.'); return; }
   if(fin<=ini){ alert('El nro final debe ser mayor al inicial.'); return; }
 
-  // ── HORA AUTOMÁTICA — se captura exactamente al confirmar ──
-  const horaCarga = getHoraActual();
+  // ── HORA: automática si es hoy, manual si es otra fecha ──
+  const fechaVal = document.getElementById('fecha').value;
+  let horaCarga;
+  if(fechaVal === hoy){
+    horaCarga = getHoraActual();
+  } else {
+    horaCarga = document.getElementById('hora-manual').value || '';
+    if(!horaCarga){ alert('Ingresá la hora de la carga.'); return; }
+    horaCarga = horaCarga + ':00'; // HH:MM → HH:MM:SS
+  }
 
   const { data: ultCargas } = await sb.from('cargas').select('km').eq('unidad',unidad).order('km',{ascending:false}).limit(1);
   if(ultCargas && ultCargas.length > 0 && ultCargas[0].km > 0){
@@ -681,6 +704,11 @@ function nuevaCarga(){
   document.getElementById('otro-unidad-box').style.display='none';
   document.getElementById('litros-box').style.display='none';
   document.getElementById('fecha').value=hoy;
+  // Resetear hora al volver a carga de hoy
+  document.getElementById('hora-auto-box').style.display='flex';
+  document.getElementById('hora-auto-txt').style.display='block';
+  document.getElementById('hora-manual-box').style.display='none';
+  document.getElementById('hora-manual').value='';
 }
 
 // ── CHECK STOCK ALERTAS ──
