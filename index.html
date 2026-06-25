@@ -49,12 +49,10 @@
     .alert-ok{background:#EAF3DE;border:1px solid #3B6D11;color:#27500A}
     .alert-warn{background:#FAEEDA;border:1px solid #BA7517;color:#633806}
     .alert-danger{background:#FCEBEB;border:1px solid #A32D2D;color:#7A1A1A}
-    /* ALERTA STOCK */
     .stock-alert{background:#FCEBEB;border:2px solid #C00000;border-radius:12px;padding:14px;margin-bottom:10px;display:none}
     .stock-alert-title{font-weight:700;color:#C00000;font-size:15px;margin-bottom:4px}
     .stock-alert-detail{font-size:13px;color:#7A1A1A}
     .stock-ok{background:#EAF3DE;border:2px solid #3B6D11;border-radius:12px;padding:12px;margin-bottom:10px;display:none}
-    /* WHATSAPP CONFIG */
     .wa-config{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px;margin-top:10px}
     .login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f5f5;padding:20px}
     .login-card{background:white;border-radius:16px;padding:24px;width:100%;max-width:360px;box-shadow:0 4px 20px rgba(0,0,0,.1);text-align:center}
@@ -63,6 +61,8 @@
     .spinner{width:20px;height:20px;border:2px solid #ddd;border-top:2px solid #1F4E79;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto}
     @keyframes spin{to{transform:rotate(360deg)}}
     .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;z-index:100;display:none}
+    /* hora badge */
+    .hora-badge{display:inline-block;background:#EBF2FA;color:#1F4E79;font-size:11px;font-weight:600;padding:2px 7px;border-radius:12px;margin-left:4px}
   </style>
 </head>
 <body>
@@ -90,7 +90,6 @@
       <div class="user-badge" id="header-user"></div>
     </div>
 
-    <!-- ALERTA STOCK GLOBAL -->
     <div class="stock-alert" id="alerta-stock-comun">
       <div class="stock-alert-title">⚠️ Stock Gas Oil Común BAJO</div>
       <div class="stock-alert-detail" id="alerta-stock-comun-txt"></div>
@@ -151,6 +150,12 @@
         </div>
         <label>Fecha</label>
         <input type="date" id="fecha">
+        <!-- Hora automática — solo informativa, no editable -->
+        <div style="margin-top:10px;background:#f8f9fa;border-radius:8px;padding:10px 12px;font-size:13px;color:#555;display:flex;justify-content:space-between;align-items:center">
+          <span>🕐 Hora de carga</span>
+          <span id="hora-display" style="font-weight:700;color:#1F4E79;font-size:15px">—</span>
+        </div>
+        <p style="font-size:11px;color:#aaa;margin-top:4px;text-align:right">Se registra automáticamente al guardar</p>
         <button class="btn-primary" onclick="guardarCarga()">Confirmar carga</button>
       </div>
       <div id="success-card" style="display:none">
@@ -178,7 +183,6 @@
         <p class="section-title">Últimas cargas</p>
         <div id="p-ultimas"><div class="spinner" style="margin:1rem auto"></div></div>
       </div>
-      <!-- EXPORTAR EXCEL -->
       <div class="card">
         <p class="section-title">Exportar a Excel</p>
         <p style="font-size:12px;color:#888;margin-bottom:10px">Descargá todas las cargas del mes en un archivo Excel</p>
@@ -192,7 +196,7 @@
     <!-- HISTORIAL -->
     <div id="screen-historial" class="screen">
       <div class="card" style="padding:10px">
-        <input type="text" id="hist-buscar" placeholder="Buscar por patente o chofer..." 
+        <input type="text" id="hist-buscar" placeholder="Buscar por patente o chofer..."
                oninput="loadHistorial()" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px">
         <div style="display:flex;gap:8px;margin-bottom:8px">
           <select id="hist-unidad" onchange="loadHistorial()" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px">
@@ -269,7 +273,6 @@
         <input type="number" id="umbral-premium" placeholder="Ej: 500" inputmode="numeric">
         <button class="btn-primary" onclick="guardarUmbrales()">Guardar umbrales</button>
       </div>
-
       <div class="card">
         <p class="section-title">📱 Alerta por WhatsApp</p>
         <p style="font-size:12px;color:#888;margin-bottom:10px">
@@ -285,7 +288,6 @@
           <p style="font-size:12px;font-weight:600;color:#166534;margin-bottom:6px">✓ Configurado. Cuando el stock baje del umbral aparecerán botones para avisar a cada número.</p>
         </div>
       </div>
-
       <div class="card">
         <p class="section-title">👤 Mi usuario</p>
         <p style="font-size:13px;color:#555" id="config-usuario"></p>
@@ -338,6 +340,28 @@ const hoy = new Date().toISOString().split('T')[0];
 document.getElementById('fecha').value = hoy;
 document.getElementById('rep-fecha').value = hoy;
 document.getElementById('header-fecha').textContent = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+
+// Actualizar el reloj en el formulario cada segundo
+function actualizarReloj(){
+  const ahora = new Date();
+  const hora = ahora.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});
+  const el = document.getElementById('hora-display');
+  if(el) el.textContent = hora;
+}
+actualizarReloj();
+setInterval(actualizarReloj, 1000);
+
+// Obtener hora actual como string HH:MM:SS
+function getHoraActual(){
+  const ahora = new Date();
+  return ahora.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false});
+}
+
+// Formatear hora para mostrar (HH:MM)
+function formatHora(horaStr){
+  if(!horaStr) return '';
+  return horaStr.substring(0,5); // HH:MM
+}
 
 function showLoading(v){ document.getElementById('loading').style.display = v ? 'flex' : 'none'; }
 
@@ -474,7 +498,6 @@ async function loadHistorial(){
 
   if(!filtrado.length){ div.innerHTML='<p style="font-size:13px;color:#888;text-align:center;padding:1rem">Sin resultados</p>'; return; }
 
-  // Totales
   const totalLts = filtrado.reduce((s,c)=>s+c.litros,0);
 
   div.innerHTML =
@@ -482,35 +505,38 @@ async function loadHistorial(){
     '<span style="color:#1F4E79;font-weight:600">'+filtrado.length+' cargas</span>'+
     '<span style="color:#1F4E79;font-weight:600">'+Math.round(totalLts).toLocaleString('es-AR')+' lts total</span>'+
     '</div>' +
-    filtrado.map(c=>`
-    <div style="background:white;border-radius:10px;padding:12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-        <div>
-          <span style="font-weight:700;font-size:14px;color:#1F4E79">${c.unidad}</span>
-          <span style="font-size:12px;color:#888;margin-left:6px">${c.fecha}</span>
-          <br><span style="font-size:12px;color:#888">${c.km?.toLocaleString('es-AR')||'—'} km | ${c.usuario||'—'}</span>
+    filtrado.map(c=>{
+      const horaStr = c.hora_carga ? '<span class="hora-badge">🕐 '+formatHora(c.hora_carga)+'</span>' : '';
+      return `
+      <div style="background:white;border-radius:10px;padding:12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div>
+            <span style="font-weight:700;font-size:14px;color:#1F4E79">${c.unidad}</span>
+            <span style="font-size:12px;color:#888;margin-left:6px">${c.fecha}</span>${horaStr}<br>
+            <span style="font-size:12px;color:#888">${c.km?.toLocaleString('es-AR')||'—'} km | ${c.usuario||'—'}</span>
+          </div>
+          <div style="text-align:right">
+            <span style="font-weight:700;font-size:15px">${Math.round(c.litros).toLocaleString('es-AR')} lts</span><br>
+            <span class="badge ${c.tipo==='premium'?'badge-green':'badge-blue'}">${c.tipo==='premium'?'Premium':'Común'}</span>
+          </div>
         </div>
-        <div style="text-align:right">
-          <span style="font-weight:700;font-size:15px">${Math.round(c.litros).toLocaleString('es-AR')} lts</span><br>
-          <span class="badge ${c.tipo==='premium'?'badge-green':'badge-blue'}">${c.tipo==='premium'?'Premium':'Común'}</span>
+        <div style="background:#f8f9fa;border-radius:8px;padding:6px 10px;font-size:12px;color:#555;display:flex;justify-content:space-between">
+          <span>Surtidor inicio: <strong>${c.surtidor_inicio?.toLocaleString('es-AR')||'—'}</strong></span>
+          <span>Final: <strong>${c.surtidor_fin?.toLocaleString('es-AR')||'—'}</strong></span>
+          <span>Dif: <strong>${c.surtidor_fin&&c.surtidor_inicio?Math.round(c.surtidor_fin-c.surtidor_inicio).toLocaleString('es-AR'):Math.round(c.litros).toLocaleString('es-AR')} lts</strong></span>
         </div>
-      </div>
-      <div style="background:#f8f9fa;border-radius:8px;padding:6px 10px;font-size:12px;color:#555;display:flex;justify-content:space-between">
-        <span>Surtidor inicio: <strong>${c.surtidor_inicio?.toLocaleString('es-AR')||'—'}</strong></span>
-        <span>Final: <strong>${c.surtidor_fin?.toLocaleString('es-AR')||'—'}</strong></span>
-        <span>Dif: <strong>${c.surtidor_fin&&c.surtidor_inicio?Math.round(c.surtidor_fin-c.surtidor_inicio).toLocaleString('es-AR'):Math.round(c.litros).toLocaleString('es-AR')} lts</strong></span>
-      </div>
-      <div style="display:flex;gap:6px;margin-top:8px">
-        <button onclick="editarCarga(${JSON.stringify(c).replace(/"/g,'&quot;')})"
-          style="padding:4px 12px;border:1px solid #2E75B6;border-radius:6px;background:#EBF2FA;color:#1F4E79;font-size:11px;cursor:pointer;font-family:inherit">
-          Editar
-        </button>
-        <button onclick="eliminarCarga('${c.id}')"
-          style="padding:4px 12px;border:1px solid #C00000;border-radius:6px;background:#FCEBEB;color:#C00000;font-size:11px;cursor:pointer;font-family:inherit">
-          Borrar
-        </button>
-      </div>
-    </div>`).join('');
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button onclick="editarCarga(${JSON.stringify(c).replace(/"/g,'&quot;')})"
+            style="padding:4px 12px;border:1px solid #2E75B6;border-radius:6px;background:#EBF2FA;color:#1F4E79;font-size:11px;cursor:pointer;font-family:inherit">
+            Editar
+          </button>
+          <button onclick="eliminarCarga('${c.id}')"
+            style="padding:4px 12px;border:1px solid #C00000;border-radius:6px;background:#FCEBEB;color:#C00000;font-size:11px;cursor:pointer;font-family:inherit">
+            Borrar
+          </button>
+        </div>
+      </div>`;
+    }).join('');
 }
 
 // ── TIPO SELECTORS ──
@@ -578,7 +604,10 @@ async function guardarCarga(){
   const fecha = document.getElementById('fecha').value;
   if(!unidad||!km||!ini||!fin||!fecha){ alert('Completá todos los campos.'); return; }
   if(fin<=ini){ alert('El nro final debe ser mayor al inicial.'); return; }
-  // Validacion KM: avisa si parece incorrecto pero deja confirmar
+
+  // ── HORA AUTOMÁTICA — se captura exactamente al confirmar ──
+  const horaCarga = getHoraActual();
+
   const { data: ultCargas } = await sb.from('cargas').select('km').eq('unidad',unidad).order('km',{ascending:false}).limit(1);
   if(ultCargas && ultCargas.length > 0 && ultCargas[0].km > 0){
     const ultimoKm = ultCargas[0].km;
@@ -592,7 +621,7 @@ async function guardarCarga(){
     }
   }
   const litros = Math.round((fin-ini)*10)/10;
-  // Proteccion contra duplicados: verificar si ya existe una carga igual
+
   const { data: dupCheck } = await sb.from('cargas').select('id')
     .eq('unidad', unidad).eq('fecha', fecha)
     .eq('surtidor_inicio', ini).eq('surtidor_fin', fin).limit(1);
@@ -600,17 +629,19 @@ async function guardarCarga(){
     alert('⚠️ Esta carga ya está registrada (misma unidad, fecha y surtidor). No se guardó para evitar duplicados.');
     return;
   }
+
   showLoading(true);
   const { error } = await sb.from('cargas').insert([{
     unidad, km, surtidor_inicio: ini, surtidor_fin: fin,
     litros, tipo: tipoComb, carga_tipo: tipoCarga,
-    fecha, usuario: currentUser
+    fecha, usuario: currentUser,
+    hora_carga: horaCarga   // ← nueva columna
   }]);
   showLoading(false);
   if(error){ alert('Error al guardar: '+error.message); return; }
   document.getElementById('form-card').style.display = 'none';
   document.getElementById('success-card').style.display = 'block';
-  document.getElementById('success-detail').textContent = unidad+' — '+litros.toLocaleString('es-AR')+' lts — '+fecha;
+  document.getElementById('success-detail').textContent = unidad+' — '+litros.toLocaleString('es-AR')+' lts — '+fecha+' '+formatHora(horaCarga);
   await mostrarConsumoAlert(unidad, km, litros);
   await checkStockAlertas();
 }
@@ -659,19 +690,15 @@ async function checkStockAlertas(){
   const waNumero      = localStorage.getItem('wa_numero')||'';
   const waNumero2     = localStorage.getItem('wa_numero2')||'';
   if(!umbralComun && !umbralPremium) return;
-
   const { data: cargas }  = await sb.from('cargas').select('tipo,litros');
   const { data: repos }   = await sb.from('reposiciones').select('tipo,litros');
   if(!cargas||!repos) return;
-
   const despComun  = cargas.filter(c=>c.tipo==='comun').reduce((s,c)=>s+c.litros,0);
   const despPrem   = cargas.filter(c=>c.tipo==='premium').reduce((s,c)=>s+c.litros,0);
   const repComun   = repos.filter(r=>r.tipo==='comun').reduce((s,r)=>s+r.litros,0);
   const repPrem    = repos.filter(r=>r.tipo==='premium').reduce((s,r)=>s+r.litros,0);
   const stockComun = Math.round(repComun - despComun);
   const stockPrem  = Math.round(repPrem  - despPrem);
-
-  // Alerta común
   const elComun = document.getElementById('alerta-stock-comun');
   if(umbralComun>0 && repComun>0 && stockComun<=umbralComun){
     document.getElementById('alerta-stock-comun-txt').innerHTML =
@@ -680,8 +707,6 @@ async function checkStockAlertas(){
       (waNumero2 ? '<a href="'+generarLinkWA('común', stockComun, waNumero2)+'" target="_blank" style="display:inline-block;margin-top:8px;background:#128C7E;color:white;padding:6px 14px;border-radius:8px;font-weight:600;text-decoration:none">📱 Avisar Nro 2</a>' : '');
     elComun.style.display='block';
   } else { elComun.style.display='none'; }
-
-  // Alerta premium
   const elPrem = document.getElementById('alerta-stock-premium');
   if(umbralPremium>0 && repPrem>0 && stockPrem<=umbralPremium){
     document.getElementById('alerta-stock-premium-txt').innerHTML =
@@ -707,11 +732,9 @@ function generarLinkWA(tipo, stock, numero){
 async function loadPanel(){
   const { data: todas } = await sb.from('cargas').select('*').order('fecha',{ascending:false}).order('created_at',{ascending:false}).limit(200);
   if(!todas) return;
-
   const hoyCargas = todas.filter(c=>c.fecha===hoy);
   document.getElementById('p-cargas-hoy').textContent = hoyCargas.length;
   document.getElementById('p-lts-hoy').textContent = Math.round(hoyCargas.reduce((s,c)=>s+c.litros,0)).toLocaleString('es-AR');
-
   const kmMap={};
   todas.forEach(c=>{ if(!kmMap[c.unidad]||c.km>kmMap[c.unidad]) kmMap[c.unidad]=c.km; });
   const kmDiv=document.getElementById('p-km-unidades');
@@ -720,13 +743,14 @@ async function loadPanel(){
     <div class="row-item"><span style="font-weight:600">${u}</span>
     <span style="color:#555">${km.toLocaleString('es-AR')} km</span></div>`).join('')
     :'<p style="font-size:13px;color:#888;text-align:center;padding:.75rem 0">Sin datos</p>';
-
   const ul=document.getElementById('p-ultimas');
-  ul.innerHTML=todas.slice(0,15).map(c=>`
+  ul.innerHTML=todas.slice(0,15).map(c=>{
+    const horaStr = c.hora_carga ? '<span class="hora-badge">🕐 '+formatHora(c.hora_carga)+'</span>' : '';
+    return `
     <div class="row-item" style="align-items:center">
       <div style="flex:1">
         <span style="font-weight:600">${c.unidad}</span>
-        <span style="font-size:12px;color:#888;margin-left:6px">${c.fecha}</span><br>
+        <span style="font-size:12px;color:#888;margin-left:6px">${c.fecha}</span>${horaStr}<br>
         <span style="font-size:12px;color:#888">${c.km.toLocaleString('es-AR')} km | ${c.usuario}</span>
       </div>
       <div style="text-align:right;margin-right:8px">
@@ -734,18 +758,17 @@ async function loadPanel(){
         <span class="badge ${c.tipo==='premium'?'badge-green':'badge-blue'}">${c.tipo==='premium'?'Premium':'Común'}</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px">
-        <button onclick="editarCarga(${JSON.stringify(c).replace(/"/g,'&quot;')})" 
+        <button onclick="editarCarga(${JSON.stringify(c).replace(/"/g,'&quot;')})"
           style="padding:3px 8px;border:1px solid #2E75B6;border-radius:6px;background:#EBF2FA;color:#1F4E79;font-size:11px;cursor:pointer;font-family:inherit">
           Editar
         </button>
-        <button onclick="eliminarCarga('${c.id}')" 
+        <button onclick="eliminarCarga('${c.id}')"
           style="padding:3px 8px;border:1px solid #C00000;border-radius:6px;background:#FCEBEB;color:#C00000;font-size:11px;cursor:pointer;font-family:inherit">
           Borrar
         </button>
       </div>
-    </div>`).join('') || '<p style="font-size:13px;color:#888;text-align:center;padding:.75rem 0">Sin cargas</p>';
-
-  // Cargar meses disponibles para export
+    </div>`;
+  }).join('') || '<p style="font-size:13px;color:#888;text-align:center;padding:.75rem 0">Sin cargas</p>';
   const meses = [...new Set(todas.map(c=>c.fecha.substring(0,7)))].sort().reverse();
   const sel = document.getElementById('export-mes');
   sel.innerHTML = '<option value="">— Seleccionar mes —</option>' +
@@ -761,51 +784,38 @@ async function exportarExcel(){
   const mes = document.getElementById('export-mes').value;
   if(!mes){ alert('Seleccioná un mes primero.'); return; }
   showLoading(true);
-  // Traer todas las cargas y filtrar por mes del lado del cliente
-  const { data } = await sb.from('cargas').select('*')
-    .order('created_at',{ascending:true});
+  const { data } = await sb.from('cargas').select('*').order('created_at',{ascending:true});
   showLoading(false);
   if(!data||!data.length){ alert('No hay cargas registradas.'); return; }
-
-  // Filtrar por mes — soporta fecha como string '2026-04-28' o Date
   const dataFiltrada = data.filter(c => {
     if(!c.fecha) return false;
     const fechaStr = typeof c.fecha === 'string' ? c.fecha : new Date(c.fecha).toISOString();
     return fechaStr.startsWith(mes);
   });
-
-  if(!dataFiltrada||!dataFiltrada.length){ alert('No hay cargas para '+mes+'. Verificá que el mes seleccionado tenga cargas registradas.'); return; }
-
+  if(!dataFiltrada||!dataFiltrada.length){ alert('No hay cargas para '+mes+'.'); return; }
   const [y,mo] = mes.split('-');
   const nombreMes = new Date(y,parseInt(mo)-1,1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}).toUpperCase();
-
-  // Build worksheet data
-  const headers = ['FECHA','PATENTE','KM UNIDAD','INICIO SURTIDOR','FINAL SURTIDOR','LITROS','TIPO GO','TIPO CARGA','USUARIO'];
+  const headers = ['FECHA','HORA','PATENTE','KM UNIDAD','INICIO SURTIDOR','FINAL SURTIDOR','LITROS','TIPO GO','TIPO CARGA','USUARIO'];
   const rows = dataFiltrada.map(c => [
-    c.fecha, c.unidad, c.km,
+    c.fecha,
+    c.hora_carga || '',
+    c.unidad, c.km,
     c.surtidor_inicio, c.surtidor_fin, c.litros,
     c.tipo==='premium'?'GAS OIL PREMIUM':'GAS OIL COMÚN',
     c.carga_tipo==='lleno'?'TANQUE LLENO':'RECARGA PARCIAL',
     c.usuario
   ]);
-
-  // Resumen por equipo
   const resumen = {};
   dataFiltrada.forEach(c=>{
     if(!resumen[c.unidad]) resumen[c.unidad]={cargas:0,litros:0};
     resumen[c.unidad].cargas++;
     resumen[c.unidad].litros+=c.litros;
   });
-
   const wb = XLSX.utils.book_new();
-
-  // Hoja 1: detalle
   const ws1data = [['CONTROL DE COMBUSTIBLE — '+nombreMes], [], headers, ...rows];
   const ws1 = XLSX.utils.aoa_to_sheet(ws1data);
-  ws1['!cols'] = [{wch:10},{wch:12},{wch:14},{wch:16},{wch:16},{wch:10},{wch:18},{wch:16},{wch:16}];
+  ws1['!cols'] = [{wch:10},{wch:10},{wch:12},{wch:14},{wch:16},{wch:16},{wch:10},{wch:18},{wch:16},{wch:16}];
   XLSX.utils.book_append_sheet(wb, ws1, 'Cargas '+mes);
-
-  // Hoja 2: resumen
   const resRows = [
     ['RESUMEN POR EQUIPO — '+nombreMes], [],
     ['PATENTE','N° CARGAS','LTS TOTAL','PROM LTS/CARGA'],
@@ -816,7 +826,6 @@ async function exportarExcel(){
   const ws2 = XLSX.utils.aoa_to_sheet(resRows);
   ws2['!cols'] = [{wch:14},{wch:12},{wch:14},{wch:16}];
   XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
-
   XLSX.writeFile(wb, 'combustible_'+mes+'.xlsx');
 }
 
@@ -928,7 +937,7 @@ function guardarUmbrales(){
   if(umbP) localStorage.setItem('umbral_premium',umbP);
   document.getElementById('umbral-comun-txt').textContent=umbC?parseInt(umbC).toLocaleString('es-AR'):'no configurado';
   document.getElementById('umbral-premium-txt').textContent=umbP?parseInt(umbP).toLocaleString('es-AR'):'no configurado';
-  alert('Umbrales guardados. Las alertas se activarán cuando el stock baje de esos valores.');
+  alert('Umbrales guardados.');
   checkStockAlertas();
 }
 
@@ -940,7 +949,7 @@ function guardarWA(){
   if(num2) localStorage.setItem('wa_numero2',num2);
   else localStorage.removeItem('wa_numero2');
   document.getElementById('wa-preview').style.display='block';
-  alert('Números guardados correctamente. Cuando el stock baje del umbral aparecerán botones para avisar a cada número.');
+  alert('Números guardados correctamente.');
 }
 </script>
 </body>
